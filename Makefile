@@ -31,7 +31,7 @@ build-container: ## Build the container
 	docker build -t $(PROJECT):$(BRANCH) .
 
 push-container: ## Push container to local registry
-	docker tag $(PROJECT):$(BRANCH) $(REGISTRY)/$(PROJECT):$(BRANCH);\
+	docker tag $(PROJECT):$(BRANCH) $(REGISTRY)/$(PROJECT):$(BRANCH) 
 	docker push $(REGISTRY)/$(PROJECT):$(BRANCH)
 
 run-container: ## Run container for the test
@@ -96,4 +96,6 @@ perform-test: ## Performance test
 	docker run --add-host=chart-example.local:172.17.0.1 --rm jordi/ab -v 2 http://chart-example.local/enrich?ip=1.1.1.1
 test-app: kubectx ## Test deployed app
 	helm test -n $(PROJECT)
-
+test-cst: ## Test container structure
+	container-structure-test test --image $(REGISTRY)/$(PROJECT):$(BRANCH) \
+	--config test/cst.yaml
