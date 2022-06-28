@@ -30,7 +30,7 @@ kubectx:
 build-container: ## Build the container
 	docker build -t $(PROJECT):$(BRANCH) .
 
-push-container: ## Push container to local registry
+push-container: test-cst ## Push container to local registry
 	docker tag $(PROJECT):$(BRANCH) $(REGISTRY)/$(PROJECT):$(BRANCH) 
 	docker push $(REGISTRY)/$(PROJECT):$(BRANCH)
 
@@ -52,7 +52,7 @@ install-kubectl: binfolder ## Install kubectl
 	curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
 	chmod +x kubectl && mv kubectl $(HOME)/.local/bin/kubectl
 
-install-helm:binfolder ## Install helm
+install-helm: binfolder ## Install helm
 	curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
 install-cst: binfolder ## Install container structure test 
