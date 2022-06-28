@@ -35,16 +35,17 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: 80
+              containerPort: 8000
               protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /
-              port: http
-          readinessProbe:
-            httpGet:
-              path: /
-              port: http
+            - name: metrics
+              containerPort: 8000
+              protocol: TCP
+          {{- if .Values.LivenessProbe }}
+          livenessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.LivenessProbe "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.ReadinessProbe }}
+          readinessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.ReadinessProbe "context" $) | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}

@@ -1,7 +1,13 @@
-PROJECT = $(shell basename $(CURDIR))
+PROJECT := $(shell basename $(CURDIR))
 current_dir = $(shell pwd)
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 HASH := $(shell git rev-parse HEAD)
+NAMESPACE := $(PROJECT)-$(BRANCH)
+ifdef REGISTRY
+REGISTRY := $(REGISTRY)
+else
+REGISTRY := localhost:5001
+endif
 
 
 # HELP
@@ -13,75 +19,81 @@ help: ## This help.
 
 .DEFAULT_GOAL := help
 
-test1:
-	echo $(PROJECT) $(current_dir) $(BRANCH) $(HASH)
+binfolder:
+	mkdir -p $(HOME)/.local/bin/
+	cat $(HOME)/.bashrc  | grep -qF ".local/bin/"  || echo 'export PATH=$$PATH:$$HOME/.local/bin/' >> $(HOME)/.bashrc 
+	
+kubectx: 
+	kubectl config use-context kind-kind
+
 # Build the container
-buildcontainer: ## Build the container
-	docker build -t $(PROJECT) .
+build-container: ## Build the container
+	docker build -t $(PROJECT):$(BRANCH) .
 
-pushcontainer: ## Push container to local registry
-	docker tag $(PROJECT) localhost:5001/$(PROJECT);\
-	docker push localhost:5001/$(PROJECT)
+push-container: ## Push container to local registry
+	docker tag $(PROJECT):$(BRANCH) $(REGISTRY)/$(PROJECT):$(BRANCH);\
+	docker push $(REGISTRY)/$(PROJECT):$(BRANCH)
 
-runcontainer: ## Run container for the test
-	docker run -i -t --rm --name="$(PROJECT)" $(PROJECT)
+run-container: ## Run container for the test
+	docker run -i -t --rm --name="$(PROJECT)" $(PROJECT):$(BRANCH)
 
-stopcontainer: ## Stop and remove a running container
+stop-container: ## Stop and remove a running container
 	docker stop $(PROJECT); docker rm $(PROJECT) 
 
 clean: ## Clean container 
-	docker stop $(PROJECT); docker rm $(PROJECT); docker rmi $(PROJECT) 
+	docker stop $(PROJECT); docker rm $(PROJECT); docker rmi $(PROJECT):$(BRANCH)
 
-installkind: ## kind minimal kubernetes for local development
+install-kind: binfolder ## kind minimal kubernetes for local development
 	curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.14.0/kind-linux-amd64 ;\
 	chmod +x ./kind ;\
-	mv ./kind /some-dir-in-your-PATH/kind 
+	mv ./kind $(HOME)/.local/bin/kind 
 
-deploycluster: ## Deploy kind cluster with local registry
+install-kubectl: binfolder ## Install kubectl 
+	curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
+	chmod +x kubectl && mv kubectl $(HOME)/.local/bin/kubectl
+
+install-helm:binfolder ## Install helm
+	curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+install-cst: binfolder ## Install container structure test 
+	curl -LO https://storage.googleapis.com/container-structure-test/latest/container-structure-test-linux-amd64 && \
+	chmod +x container-structure-test-linux-amd64 && mv container-structure-test-linux-amd64 $(HOME)/.local/bin/container-structure-test
+
+deploy-app: kubectx ## Deploy application to kind kubernetes 
+	helm upgrade --install -n $(NAMESPACE) --create-namespace -f helm/values.yaml $(PROJECT) ./helm \
+	--set image.tag=$(BRANCH) \
+	--set image.repository=$(REGISTRY)/$(PROJECT) \
+	--set serviceMonitor.enabled=true
+deploy-cluster: kubectx  ## Deploy kind cluster with local registry
 	sh -c cluster/cluster-local-registry.sh
-deletecluster: ## Destroy kind cluter
-	kind delete  cluster   
-
-deployopa: ## Deploy open policy agent
-	kubectl config use-context kind-kind
-	kubectl apply -f https://raw.githubusercontent.com/open-policy-agent/gatekeeper/release-3.8/deploy/gatekeeper.yaml
-deleteopa: ## Deploy open policy agent
-	kubectl config use-context kind-kind
-	kubectl delete -f https://raw.githubusercontent.com/open-policy-agent/gatekeeper/release-3.8/deploy/gatekeeper.yaml
-
-deployingress: ## Deploy nginx ingress controller
-	kubectl config use-context kind-kind
+deploy-ingress: kubectx ## Deploy nginx ingress controller
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
-deleteingress: ## Delete nginx ingress controller
-	kubectl config use-context kind-kind
-	kubectl delete -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
-
-deployapp: ## Deploy application to kind kubernetes 
-	kubectl config use-context kind-kind
-	helm upgrade --install -f $(PROJECT)/values.yaml $(PROJECT) ./$(PROJECT)
-deleteapp: ## Delete application from kind kubernetes 
-	kubectl config use-context kind-kind
-	helm uninstall $(PROJECT)
-testapp: ## Test deployed app
-	kubectl config use-context kind-kind
-	helm test $(PROJECT)
-
-deployprometheus: ## Deploy prometheus operator
-	kubectl config use-context kind-kind
+deploy-metricserver: kubectx ## Deploy metric server for enable HPA. 
+	helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
+	helm upgrade --install metrics-server -n kube-system metrics-server/metrics-server --set args[0]=--kubelet-insecure-tls 
+deploy-opa: kubectx ## Deploy open policy agent
+	kubectl apply -f https://raw.githubusercontent.com/open-policy-agent/gatekeeper/release-3.8/deploy/gatekeeper.yaml
+deploy-prometheus: kubectx ## Deploy prometheus operator
 	kubectl create -f https://github.com/prometheus-operator/prometheus-operator/raw/v0.57.0/bundle.yaml
 	kubectl apply -f cluster/prometheus.yaml
-deleteprometheus: ## Delete prometheus operator
-	kubectl config use-context kind-kind
+
+delete-app: kubectx ## Delete application from kind kubernetes 
+	helm uninstall -n $(NAMESPACE) $(PROJECT)
+delete-cluster:  kubectx ## Destroy kind cluter
+	kind delete  cluster   
+delete-ingress: kubectx ## Delete nginx ingress controller
+	kubectl delete -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+delete-metricserver: kubectx ## Delete metric server 
+	helm uninstall -n kube-system metrics-server 
+delete-opa: kubectx ## Deploy open policy agent
+	kubectl delete -f https://raw.githubusercontent.com/open-policy-agent/gatekeeper/release-3.8/deploy/gatekeeper.yaml
+delete-prometheus: kubectx ## Delete prometheus operator
 	kubectl delete -f https://github.com/prometheus-operator/prometheus-operator/raw/v0.57.0/bundle.yaml
 	kubectl apply -f cluster/prometheus.yaml
 
-deploymetricserver: ## Deploy metric server for enable HPA. 
-	kubectl config use-context kind-kind
-	helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
-	helm upgrade --install metrics-server -n kube-system metrics-server/metrics-server --set args[0]=--kubelet-insecure-tls 
-deletemetricserver: ## Delete metric server 
-	kubectl config use-context kind-kind
-	helm uninstall -n kube-system metrics-server 
 
-performtest: ## Performance test 
+perform-test: ## Performance test 
 	docker run --add-host=chart-example.local:172.17.0.1 --rm jordi/ab -v 2 http://chart-example.local/enrich?ip=1.1.1.1
+test-app: kubectx ## Test deployed app
+	helm test -n $(PROJECT)
+

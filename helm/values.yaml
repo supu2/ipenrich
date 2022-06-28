@@ -36,6 +36,13 @@ securityContext: {}
   # runAsNonRoot: true
   # runAsUser: 1000
 
+## @param LivenessProbe Override default liveness probe
+##
+LivenessProbe: {}
+## @param ReadinessProbe Override default readiness probe
+##
+ReadinessProbe: {}
+
 service:
   type: ClusterIP
   port: 80
@@ -80,3 +87,6 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+serviceMonitor:
+  enabled: false
