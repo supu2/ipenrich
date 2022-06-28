@@ -3,6 +3,7 @@
 {{- range $host := .Values.ingress.hosts }}
   {{- range .paths }}
   http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}{{ .path }}
+  curl -H "Host: {{ $host.host }}" http{{ if $.Values.ingress.tls }}s{{ end }}://127.0.0.1/?ip=8.8.8.8
   {{- end }}
 {{- end }}
 {{- else if contains "NodePort" .Values.service.type }}
