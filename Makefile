@@ -49,7 +49,7 @@ install-kind: binfolder ## kind minimal kubernetes for local development
 	mv ./kind $(HOME)/.local/bin/kind 
 
 install-kubectl: binfolder ## Install kubectl 
-	curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
+	curl -LO "https://dl.k8s.io/release/v1.24.2/bin/linux/amd64/kubectl" && \
 	chmod +x kubectl && mv kubectl $(HOME)/.local/bin/kubectl
 
 install-helm: binfolder ## Install helm
@@ -63,8 +63,9 @@ deploy-app: kubectx ## Deploy application to kind kubernetes
 	helm upgrade --install -n $(NAMESPACE) --create-namespace -f helm/values.yaml $(PROJECT) ./helm \
 	--set image.tag=$(BRANCH) \
 	--set image.repository=$(REGISTRY)/$(PROJECT) \
-	--set serviceMonitor.enabled=true
-deploy-cluster: kubectx  ## Deploy kind cluster with local registry
+	--set serviceMonitor.enabled=true \
+	--set ingress.enabled=true
+deploy-cluster:  ## Deploy kind cluster with local registry
 	sh -c cluster/cluster-local-registry.sh
 deploy-ingress: kubectx ## Deploy nginx ingress controller
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
@@ -92,10 +93,10 @@ delete-prometheus: kubectx ## Delete prometheus operator
 	kubectl apply -f cluster/prometheus.yaml
 
 
-perform-test: ## Performance test 
-	docker run --add-host=chart-example.local:172.17.0.1 --rm jordi/ab -v 2 http://chart-example.local/enrich?ip=1.1.1.1
+perform-test: ## Performance test, expected requests per second bigger than 10000
+	docker run --add-host=chart-example.local:172.17.0.1 --rm jordi/ab -c 100 -n 10000 http://chart-example.local/?ip=1.1.1.1
 test-app: kubectx ## Test deployed app
-	helm test -n $(PROJECT)
+	helm test -n $(PROJECT)-$(BRANCH) $(PROJECT)
 test-cst: ## Test container structure
-	container-structure-test test --image $(REGISTRY)/$(PROJECT):$(BRANCH) \
+	container-structure-test test --image $(PROJECT):$(BRANCH) \
 	--config test/cst.yaml
