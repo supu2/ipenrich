@@ -5,6 +5,10 @@ This applicaton provide ip address to asn(autonomous system number) lookup based
 ubuntu 20.04
 
 docker 20.10+
+
+git
+
+make
 ```
 make install-kubectl    # Install kubectl
 make install-helm       # Install helm
@@ -24,11 +28,17 @@ make perform-test       # Performance test, expected requests per second bigger 
 curl -H "Host: chart-example.local" http://127.0.0.1/?ip=8.8.8.8 # Test application
 ```
 # TODO
-1. Implement logging layer
-2. Add maxmind city, country database
-3. Implement response latency prometheus metric
-4. Create production pipeline using tekton and argocd 
-5. Install argo workflow and istio for canary deployment and Circuit Breaking
+- [ ] Implement logging layer in application
+- [ ] Deploy log system EFK or fluentbit,loki,grafana
+- [ ] Add maxmind city, country database
+- [ ] Implement response latency prometheus metric
+- [ ] Create production pipeline using tekton and argocd 
+- [ ] Install argo workflow and istio for canary deployment and Circuit Breaking
+- [x] Implement prometheus service monitor
+- [ ] Deploy alertmanager and grafana oncall for alert management system
+- [ ] Implement prometheus rule for alert and integrate alertmanager to oncall system
+- [ ] Implement Network policy
+- 
 ```
 Below make functions
 help                           This help.
