@@ -31,13 +31,13 @@ curl -H "Host: chart-example.local" http://127.0.0.1/?ip=8.8.8.8 # Test applicat
 - [ ] Implement logging layer in application
 - [ ] Deploy log system EFK or fluentbit,loki,grafana
 - [ ] Add maxmind city, country database
-- [ ] Implement response latency prometheus metric
+- [x] Implement response latency prometheus metric
 - [ ] Create production pipeline using tekton and argocd 
 - [ ] Install argo workflow and istio for canary deployment and Circuit Breaking
 - [x] Implement prometheus service monitor
 - [ ] Deploy alertmanager and grafana oncall for alert management system
 - [ ] Implement prometheus rule for alert and integrate alertmanager to oncall system
-- [ ] Implement Network policy
+- [x] Implement Network policy
 - 
 ```
 Below make functions

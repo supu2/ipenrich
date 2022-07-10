@@ -24,6 +24,8 @@ var ipEnrichCounter = prometheus.NewCounter(
 		Help: "Number of request handled by enricher handler",
 	},
 )
+
+// ip enrichment latency
 var ipEnrichLatency = prometheus.NewSummary(
 	prometheus.SummaryOpts{
 		Name:       "ipenrich_request_durations",

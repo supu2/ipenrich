@@ -64,7 +64,8 @@ deploy-app: kubectx ## Deploy application to kind kubernetes
 	--set image.tag=$(BRANCH) \
 	--set image.repository=$(REGISTRY)/$(PROJECT) \
 	--set serviceMonitor.enabled=true \
-	--set ingress.enabled=true
+	--set ingress.enabled=true \
+	--set image.pullPolicy=Always
 deploy-cluster:  ## Deploy kind cluster with local registry
 	sh -c cluster/cluster-local-registry.sh
 deploy-ingress: kubectx ## Deploy nginx ingress controller

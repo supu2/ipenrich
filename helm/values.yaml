@@ -90,3 +90,15 @@ affinity: {}
 
 serviceMonitor:
   enabled: false
+
+NetworkPolicy:
+  enabled: false
+  egressRules: []
+  ingressRules: 
+    - selectors:
+        - namespaceSelector:
+            matchLabels:
+              "kubernetes.io/metadata.name": "ingress-nginx"
+      ports:
+        - protocol: TCP
+          port: 8000

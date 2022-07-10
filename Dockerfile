@@ -1,8 +1,7 @@
 FROM golang AS builder
 WORKDIR /opt
 COPY go.mod go.sum main.go /opt/ 
-RUN CGO_ENABLED=0 GOOS=linux go get && go build -installsuffix cgo  
-
+RUN go get && CGO_ENABLED=0 go build -a -installsuffix cgo  
 
 FROM alpine:3.15
 WORKDIR /opt
