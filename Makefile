@@ -16,6 +16,8 @@ endif
 
 help: ## This help.
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo "Please add domain record in hosts file"
+	@echo 'sudo echo "172.17.0.1 grafana.chart-example.local \n 172.17.0.1 chart-example.local" >> /etc/hosts' 
 
 .DEFAULT_GOAL := help
 
@@ -68,6 +70,16 @@ deploy-app: kubectx ## Deploy application to kind kubernetes
 	--set image.pullPolicy=Always
 deploy-cluster:  ## Deploy kind cluster with local registry
 	sh -c cluster/cluster-local-registry.sh
+deploy-loki: kubectx  ## Deploy loki stack with grafana
+	helm repo add grafana https://grafana.github.io/helm-charts
+	helm repo update
+	helm upgrade --install loki --namespace=loki-stack grafana/loki-stack --create-namespace \
+	--set grafana.enabled=true \
+	--set grafana.ingress.enabled=true \
+	--set grafana.ingress.hosts[0]=grafana.chart-example.local
+	@echo -n "User: admin password: "
+	@kubectl get secret --namespace loki-stack loki-grafana -o jsonpath="{.data.admin-password}" | base64 --decode  
+	@echo "\nGrafana url: http://grafana.chart-example.local" 
 deploy-ingress: kubectx ## Deploy nginx ingress controller
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
 deploy-metricserver: kubectx ## Deploy metric server for enable HPA. 
@@ -83,6 +95,8 @@ delete-app: kubectx ## Delete application from kind kubernetes
 	helm uninstall -n $(NAMESPACE) $(PROJECT)
 delete-cluster:  kubectx ## Destroy kind cluter
 	kind delete  cluster   
+delete-loki: kubectx ## Delete loki stack
+	helm uninstall -n loki-stack loki
 delete-ingress: kubectx ## Delete nginx ingress controller
 	kubectl delete -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
 delete-metricserver: kubectx ## Delete metric server 
