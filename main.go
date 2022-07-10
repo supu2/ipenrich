@@ -25,9 +25,16 @@ var ipenrichrequestCounter = prometheus.NewCounter(
 		Help: "Number of request handled by enricher handler",
 	},
 )
+var ipEnrichLatency = prometheus.NewSummary(
+	prometheus.SummaryOpts{
+		Name:       "ipenrich_request_durations",
+		Help:       "Ipenrich requests latencies in seconds",
+		Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
+	})
 
 // load env variable and  maxmind db
 func init() {
+	prometheus.MustRegister(ipenrichrequestCounter, ipEnrichLatency)
 	// Get maxminddb path value from env
 	if mmdb, ok = os.LookupEnv("MAXMIND_DB"); !ok {
 		mmdb = "/opt/GeoLite2-ASN.mmdb"
@@ -51,6 +58,11 @@ func init() {
 }
 
 func enricher(w http.ResponseWriter, r *http.Request) {
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		us := v * 1000000 // make microseconds
+		ipEnrichLatency.Observe(us)
+	}))
+	defer timer.ObserveDuration()
 	// set Content type json
 	w.Header().Set("Content-Type", "application/json")
 
@@ -82,7 +94,6 @@ func enricher(w http.ResponseWriter, r *http.Request) {
 //TODO, create log layer
 func main() {
 	// TODO, auto update maxmind file
-	prometheus.MustRegister(ipenrichrequestCounter)
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/", enricher)
 	log.Fatal(http.ListenAndServe(port, nil))
