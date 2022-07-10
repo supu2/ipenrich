@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gorilla/handlers"
 	"github.com/oschwald/geoip2-golang"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -35,6 +36,7 @@ var ipEnrichLatency = prometheus.NewSummary(
 
 // load env variable and  maxmind db
 func init() {
+
 	prometheus.MustRegister(ipEnrichCounter, ipEnrichLatency)
 	// Get maxminddb path value from env
 	if mmdb, ok = os.LookupEnv("MAXMIND_DB"); !ok {
@@ -95,7 +97,8 @@ func enricher(w http.ResponseWriter, r *http.Request) {
 //TODO, create log layer
 func main() {
 	// TODO, auto update maxmind file
-	http.Handle("/metrics", promhttp.Handler())
-	http.HandleFunc("/", enricher)
-	log.Fatal(http.ListenAndServe(port, nil))
+	mux := http.NewServeMux()
+	mux.Handle("/metrics", promhttp.Handler())
+	mux.Handle("/", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(enricher)))
+	log.Fatal((http.ListenAndServe(port, mux)))
 }

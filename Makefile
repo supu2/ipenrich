@@ -35,7 +35,7 @@ push-container: test-cst ## Push container to local registry
 	docker push $(REGISTRY)/$(PROJECT):$(BRANCH)
 
 run-container: ## Run container for the test
-	docker run -i -t --rm --name="$(PROJECT)" $(PROJECT):$(BRANCH)
+	docker run -i -t -p 8000:8000 --rm --name="$(PROJECT)" $(PROJECT):$(BRANCH)
 
 stop-container: ## Stop and remove a running container
 	docker stop $(PROJECT); docker rm $(PROJECT) 
@@ -95,7 +95,8 @@ delete-prometheus: kubectx ## Delete prometheus operator
 
 
 perform-test: ## Performance test, expected requests per second bigger than 10000
-	docker run --add-host=chart-example.local:172.17.0.1 --rm jordi/ab -c 100 -n 10000 http://chart-example.local/?ip=1.1.1.1
+	docker run --add-host=chart-example.local:172.17.0.1 --rm jordi/ab -c 100 -n 10000 http://chart-example.local/?ip=1.1.1.1 
+	curl chart-example.local:80/metrics
 test-app: kubectx ## Test deployed app
 	helm test -n $(PROJECT)-$(BRANCH) $(PROJECT)
 test-cst: ## Test container structure

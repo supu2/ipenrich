@@ -28,7 +28,7 @@ make perform-test       # Performance test, expected requests per second bigger 
 curl -H "Host: chart-example.local" http://127.0.0.1/?ip=8.8.8.8 # Test application
 ```
 # TODO
-- [ ] Implement logging layer in application
+- [x] Implement logging layer in application
 - [ ] Deploy log system EFK or fluentbit,loki,grafana
 - [ ] Add maxmind city, country database
 - [x] Implement response latency prometheus metric
