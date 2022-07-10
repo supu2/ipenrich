@@ -14,9 +14,15 @@ import (
 )
 
 var ok bool
-var mmdb, port string
+var asn, city, port string
 var err error
-var db *geoip2.Reader
+var asndb, citydb *geoip2.Reader
+
+type enrich struct {
+	Country, City, AutonomousSystemOrganization string
+	AutonomousSystemNumber                      uint
+	Latitude, Longitude                         float64
+}
 
 // ip enrichment counter
 var ipEnrichCounter = prometheus.NewCounter(
@@ -39,8 +45,13 @@ func init() {
 
 	prometheus.MustRegister(ipEnrichCounter, ipEnrichLatency)
 	// Get maxminddb path value from env
-	if mmdb, ok = os.LookupEnv("MAXMIND_DB"); !ok {
-		mmdb = "/opt/GeoLite2-ASN.mmdb"
+	path, ok := os.LookupEnv("MAXMIND_DB")
+	if ok {
+		asn = path + "GeoLite2-ASN.mmdb"
+		city = path + "GeoLite2-City.mmdb"
+	} else {
+		asn = "/opt/GeoLite2-ASN.mmdb"
+		city = "/opt/GeoLite2-City.mmdb"
 	}
 
 	// Get port value from env
@@ -51,13 +62,18 @@ func init() {
 	} else {
 		port = ":" + port
 	}
-	// load maxmind db
-	db, err = geoip2.Open(mmdb)
+	// load maxmind asndb
+	asndb, err = geoip2.Open(asn)
 	if err != nil {
 		log.Fatal(err)
-		defer db.Close()
+		defer asndb.Close()
 	}
-
+	// load maxmind citydb
+	citydb, err = geoip2.Open(city)
+	if err != nil {
+		log.Fatal(err)
+		defer citydb.Close()
+	}
 }
 
 func enricher(w http.ResponseWriter, r *http.Request) {
@@ -83,14 +99,22 @@ func enricher(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// lookup ip param to maxmind db
-	record, err := db.ASN(ip)
-	jsonString, _ := json.Marshal(record)
-
+	asn_r, err := asndb.ASN(ip)
+	city_r, err := citydb.City(ip)
+	result := enrich{
+		City:                         city_r.City.Names["en"],
+		Country:                      city_r.Country.Names["en"],
+		Latitude:                     city_r.Location.Latitude,
+		Longitude:                    city_r.Location.Longitude,
+		AutonomousSystemNumber:       asn_r.AutonomousSystemNumber,
+		AutonomousSystemOrganization: asn_r.AutonomousSystemOrganization,
+	}
 	if err != nil {
 		log.Fatal(err)
 	}
 	ipEnrichCounter.Inc()
-	w.Write(jsonString)
+	response, _ := json.Marshal(result)
+	w.Write(response)
 
 }
 

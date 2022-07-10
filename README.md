@@ -29,8 +29,8 @@ curl -H "Host: chart-example.local" http://127.0.0.1/?ip=8.8.8.8 # Test applicat
 ```
 # TODO
 - [x] Implement logging layer in application
-- [ ] Deploy log system EFK or fluentbit,loki,grafana
-- [ ] Add maxmind city, country database
+- [x] Deploy log system EFK or fluentbit,loki,grafana
+- [x] Add maxmind city, country database
 - [x] Implement response latency prometheus metric
 - [ ] Create production pipeline using tekton and argocd 
 - [ ] Install argo workflow and istio for canary deployment and Circuit Breaking
