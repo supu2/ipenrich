@@ -17,9 +17,8 @@ var mmdb, port string
 var err error
 var db *geoip2.Reader
 
-//TODO, Measure response time for ensure the service reliability
 // ip enrichment counter
-var ipenrichrequestCounter = prometheus.NewCounter(
+var ipEnrichCounter = prometheus.NewCounter(
 	prometheus.CounterOpts{
 		Name: "ipenrich_request_count",
 		Help: "Number of request handled by enricher handler",
@@ -34,7 +33,7 @@ var ipEnrichLatency = prometheus.NewSummary(
 
 // load env variable and  maxmind db
 func init() {
-	prometheus.MustRegister(ipenrichrequestCounter, ipEnrichLatency)
+	prometheus.MustRegister(ipEnrichCounter, ipEnrichLatency)
 	// Get maxminddb path value from env
 	if mmdb, ok = os.LookupEnv("MAXMIND_DB"); !ok {
 		mmdb = "/opt/GeoLite2-ASN.mmdb"
@@ -86,7 +85,7 @@ func enricher(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	ipenrichrequestCounter.Inc()
+	ipEnrichCounter.Inc()
 	w.Write(jsonString)
 
 }
