@@ -99,6 +99,9 @@ NetworkPolicy:
         - namespaceSelector:
             matchLabels:
               "kubernetes.io/metadata.name": "ingress-nginx"
+        - namespaceSelector:
+            matchLabels:
+              "kubernetes.io/metadata.name": "monitoring"        
       ports:
         - protocol: TCP
           port: 8000

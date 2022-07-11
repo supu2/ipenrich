@@ -76,7 +76,12 @@ deploy-loki: kubectx  ## Deploy loki stack with grafana
 	helm upgrade --install loki --namespace=loki-stack grafana/loki-stack --create-namespace \
 	--set grafana.enabled=true \
 	--set grafana.ingress.enabled=true \
-	--set grafana.ingress.hosts[0]=grafana.chart-example.local
+	--set grafana.ingress.hosts[0]=grafana.chart-example.local \
+	--set grafana.datasources."datasources\.yaml".apiVersion=1 \
+	--set grafana.datasources."datasources\.yaml".datasources[0].name=Prometheus \
+	--set grafana.datasources."datasources\.yaml".datasources[0].type=prometheus \
+	--set grafana.datasources."datasources\.yaml".datasources[0].url=http://prometheus-kube-prometheus-prometheus.monitoring.svc:9090 \
+	--set grafana.datasources."datasources\.yaml".datasources[0].access=proxy 
 	@echo -n "User: admin password: "
 	@kubectl get secret --namespace loki-stack loki-grafana -o jsonpath="{.data.admin-password}" | base64 --decode  
 	@echo "\nGrafana url: http://grafana.chart-example.local" 
@@ -88,8 +93,21 @@ deploy-metricserver: kubectx ## Deploy metric server for enable HPA.
 deploy-opa: kubectx ## Deploy open policy agent
 	kubectl apply -f https://raw.githubusercontent.com/open-policy-agent/gatekeeper/release-3.8/deploy/gatekeeper.yaml
 deploy-prometheus: kubectx ## Deploy prometheus operator
-	kubectl create -f https://github.com/prometheus-operator/prometheus-operator/raw/v0.57.0/bundle.yaml
-	kubectl apply -f cluster/prometheus.yaml
+	helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+	helm repo update
+	helm upgrade --install prometheus  -n monitoring --create-namespace prometheus-community/kube-prometheus-stack \
+	--set defaultRules.create=false \
+	--set grafana.enabled=false \
+	--set kubeApiServer.enabled=false \
+	--set kubelet.enabled=false \
+	--set kubeControllerManager.enabled=false \
+	--set coreDns.enabled=false \
+	--set kubeEtcd.enabled=false \
+	--set kubeScheduler.enabled=false \
+	--set kubeProxy.enabled=false \
+	--set nodeExporter.enabled=false 
+
+
 
 delete-app: kubectx ## Delete application from kind kubernetes 
 	helm uninstall -n $(NAMESPACE) $(PROJECT)
@@ -104,8 +122,7 @@ delete-metricserver: kubectx ## Delete metric server
 delete-opa: kubectx ## Deploy open policy agent
 	kubectl delete -f https://raw.githubusercontent.com/open-policy-agent/gatekeeper/release-3.8/deploy/gatekeeper.yaml
 delete-prometheus: kubectx ## Delete prometheus operator
-	kubectl delete -f https://github.com/prometheus-operator/prometheus-operator/raw/v0.57.0/bundle.yaml
-	kubectl apply -f cluster/prometheus.yaml
+	helm uninstall prometheus -n monitoring
 
 
 perform-test: ## Performance test, expected requests per second bigger than 10000

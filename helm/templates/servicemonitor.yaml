@@ -5,9 +5,10 @@ metadata:
   name:  {{ include "helm.fullname" . }}
   labels: 
     {{- include "helm.labels" . | nindent 4 }}
+    release: prometheus
 spec:
   endpoints:
-    - port: metrics
+    - port: http
   namespaceSelector:
     matchNames:
       - {{ .Release.Namespace }}
