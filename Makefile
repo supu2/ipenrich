@@ -88,6 +88,8 @@ deploy-loki: kubectx  ## Deploy loki stack with grafana
 	@echo "\nGrafana url: http://grafana.chart-example.local" 
 deploy-ingress: kubectx ## Deploy nginx ingress controller
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+deploy-tekton: kubectx ## Deploy tekton 
+	kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/latest/release.yaml
 deploy-metricserver: kubectx ## Deploy metric server for enable HPA. 
 	helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
 	helm upgrade --install metrics-server -n kube-system metrics-server/metrics-server --set args[0]=--kubelet-insecure-tls 
@@ -118,6 +120,8 @@ delete-loki: kubectx ## Delete loki stack
 	helm uninstall -n loki-stack loki
 delete-ingress: kubectx ## Delete nginx ingress controller
 	kubectl delete -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+delete-tekton: kubectx ## Deploy tekton 
+	kubectl delete --filename https://storage.googleapis.com/tekton-releases/pipeline/latest/release.yaml
 delete-metricserver: kubectx ## Delete metric server 
 	helm uninstall -n kube-system metrics-server 
 delete-opa: kubectx ## Deploy open policy agent
