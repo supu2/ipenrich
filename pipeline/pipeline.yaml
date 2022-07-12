@@ -1,0 +1,163 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: pipeline
+spec:
+  params:
+    - name: CI_PROJECT_URL
+      type: string
+    - name: CI_COMMIT_BRANCH
+      type: string
+    - name: IMAGE
+      type: string
+    - default: Dockerfile
+      name: DOCKERFILE
+      type: string
+    - default: .
+      name: DOCKERCONTEXT
+      type: string
+    - name: CI_PROJECT_NAME
+      type: string
+    - name: CI_PROJECT_PATH
+      type: string
+    - name: TRIVY_IMAGE_PATH
+      type: string
+    - default: helm
+      name: HELMFOLDER
+      type: string
+  tasks:
+    - name: fetch-repository
+      params:
+        - name: url
+          value: $(params.CI_PROJECT_URL)
+        - name: deleteExisting
+          value: 'true'
+        - name: revision
+          value: $(params.CI_COMMIT_BRANCH)
+      taskRef:
+        kind: ClusterTask
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+    - name: secret-detection
+      params:
+        - name: output_format
+          value: json
+        - name: report_output_path
+          value: report.json
+        - name: repo_path
+          value: .
+        - name: args
+          value:
+            - '--verbose'
+            - '--no-git'
+      runAfter:
+        - fetch-repository
+      taskRef:
+        kind: ClusterTask
+        name: gitleaks
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+    - name: container-best-practise
+      params:
+        - name: output-format
+          value: json
+        - name: dockerfile-path
+          value: $(params.DOCKERFILE)
+      runAfter:
+        - fetch-repository
+      taskRef:
+        kind: ClusterTask
+        name: hadolint
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+    - name: trivy-scanner
+      params:
+        - name: ARGS
+          value:
+            - fs
+            - '--security-checks'
+            - 'vuln,config'
+            - '--exit-code'
+            - '1'
+            - '--severity'
+            - 'HIGH,CRITICAL'
+            - '--ignore-unfixed'
+        - name: IMAGE_PATH
+          value: $(params.TRIVY_IMAGE_PATH)
+      runAfter:
+        - fetch-repository
+      taskRef:
+        kind: ClusterTask
+        name: trivy-scanner
+      workspaces:
+        - name: manifest-dir
+          workspace: shared-workspace
+    - name: kube-linter
+      params:
+        - name: manifest
+          value: $(params.HELMFOLDER)
+        - name: default_option
+          value: ''
+        - name: includelist
+          value: ''
+      runAfter:
+        - fetch-repository
+      taskRef:
+        kind: ClusterTask
+        name: kube-linter
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+    - name: kaniko-run
+      params:
+        - name: IMAGE
+          value: '$(params.IMAGE):$(params.CI_COMMIT_BRANCH)'
+        - name: CONTEXT
+          value: $(params.DOCKERCONTEXT)
+      runAfter:
+        - fetch-repository
+        - secret-detection
+        - container-best-practise
+        - trivy-scanner
+        - kube-linter
+      taskRef:
+        kind: ClusterTask
+        name: kaniko
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+    - name: trivy-scanner-container
+      params:
+        - name: ARGS
+          value:
+            - "--exit-code"
+            - "1"
+            - "--severity"
+            - "HIGH,CRITICAL"
+        - name: IMAGE_PATH
+          value: '$(params.IMAGE):$(params.CI_COMMIT_BRANCH)'
+      runAfter:
+        - kaniko-run
+      taskRef:
+        kind: ClusterTask
+        name: trivy-scanner-container
+      workspaces:
+        - name: manifest-dir
+          workspace: shared-workspace
+  workspaces:
+    - name: shared-workspace
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: shared-workspace-pvc
+spec:
+  resources:
+    requests:
+      storage: 1Gi
+  accessModes:
+    - ReadWriteOnce

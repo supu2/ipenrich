@@ -3,6 +3,7 @@ current_dir = $(shell pwd)
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 HASH := $(shell git rev-parse HEAD)
 NAMESPACE := $(PROJECT)-$(BRANCH)
+PROJECT_URL := https://github.com/supu2/ipenrich
 ifdef REGISTRY
 REGISTRY := $(REGISTRY)
 else
@@ -38,6 +39,34 @@ push-container: test-cst ## Push container to local registry
 
 run-container: ## Run container for the test
 	docker run -i -t -p 8000:8000 --rm --name="$(PROJECT)" $(PROJECT):$(BRANCH)
+run-pipeline: kubectx ## Run tekton pipeline
+	echo "--- Create Tekton Pipeline" 
+	kubectl apply -n $(NAMESPACE) -f pipeline/pipeline.yaml
+	echo "--- Create parameterized Tekton PipelineRun yaml" 
+	tkn  p list -n $(NAMESPACE)
+	tkn pipeline start pipeline -n $(NAMESPACE) \
+	--workspace name=shared-workspace,subPath=$(PROJECT),claimName=shared-workspace-pvc  \
+	--param IMAGE=$(REGISTRY)/$(PROJECT):$(BRANCH) \
+	--param CI_COMMIT_BRANCH=$(BRANCH) \
+	--param CI_PROJECT_NAME=$(PROJECT) \
+	--param CI_PROJECT_URL=$(PROJECT_URL) \
+	--param CI_PROJECT_PATH=$(PROJECT)-$(BRANCH) \
+	--param DOCKERFILE="Dockerfile"  \
+	--param DOCKERCONTEXT="." \
+	--param HELMFOLDER="helm" \
+	--param TRIVY_IMAGE_PATH="." \
+	--dry-run \
+	--output yaml > pipelinerun.yml
+	echo "--- Trigger PipelineRun in Tekton / K8s"
+	$(eval PIPELINE_RUN_NAME=$(shell kubectl create -f pipelinerun.yml -n $(NAMESPACE) --output=jsonpath='{.metadata.name}' | tee PIPELINE_RUN_NAME))
+	echo "--- Show Tekton PipelineRun logs" && rm pipelinerun.yml
+	tkn pipelinerun logs $(PIPELINE_RUN_NAME) -n $(NAMESPACE) --follow
+	echo "--- Check if Tekton PipelineRun Failed & exit GitLab Pipeline accordingly"
+	tkn pipelinerun describe -n $(NAMESPACE) $(PIPELINE_RUN_NAME)
+	$(eval result=$(shell kubectl get pipelineruns -n $(NAMESPACE) $(PIPELINE_RUN_NAME) --output=jsonpath='{.status.conditions[*].reason}')
+	kubectl delete pipelineruns -n $(NAMESPACE) $(cat PIPELINE_RUN_NAME) 
+	echo $(result)| grep Failed && exit 1 || exit 0
+
 
 stop-container: ## Stop and remove a running container
 	docker stop $(PROJECT); docker rm $(PROJECT) 
@@ -57,6 +86,10 @@ install-kubectl: binfolder ## Install kubectl
 install-helm: binfolder ## Install helm
 	curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
+install-tkn: binfolder ## Install tkn cli
+	curl -LO https://github.com/tektoncd/cli/releases/download/v0.24.0/tkn_0.24.0_Linux_x86_64.tar.gz
+	tar xvzf tkn_0.24.0_Linux_x86_64.tar.gz -C $(HOME)/.local/bin/ tkn && rm  tkn_0.24.0_Linux_x86_64.tar.gz
+	chmod +x $(HOME)/.local/bin/tkn
 install-cst: binfolder ## Install container structure test 
 	curl -LO https://storage.googleapis.com/container-structure-test/latest/container-structure-test-linux-amd64 && \
 	chmod +x container-structure-test-linux-amd64 && mv container-structure-test-linux-amd64 $(HOME)/.local/bin/container-structure-test
@@ -90,6 +123,8 @@ deploy-ingress: kubectx ## Deploy nginx ingress controller
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
 deploy-tekton: kubectx ## Deploy tekton 
 	kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/latest/release.yaml
+deploy-tekton-tasks: kubectx ## Deploy tekton ci tasks
+	kubectl apply -f pipeline/tasks/
 deploy-metricserver: kubectx ## Deploy metric server for enable HPA. 
 	helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
 	helm upgrade --install metrics-server -n kube-system metrics-server/metrics-server --set args[0]=--kubelet-insecure-tls 

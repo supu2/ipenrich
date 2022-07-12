@@ -1,4 +1,4 @@
-FROM golang AS builder
+FROM golang:1.18 AS builder
 WORKDIR /opt
 COPY go.mod go.sum main.go /opt/ 
 RUN go get && CGO_ENABLED=0 go build -a -installsuffix cgo  
