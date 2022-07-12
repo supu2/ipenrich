@@ -2,10 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
+	"math/rand"
 	"net"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gorilla/handlers"
 	"github.com/oschwald/geoip2-golang"
@@ -17,6 +20,8 @@ var ok bool
 var asn, city, port string
 var err error
 var asndb, citydb *geoip2.Reader
+var usage = "ipenrich [args] \n -s \t random sleep"
+var sleep = false
 
 type enrich struct {
 	Country, City, AutonomousSystemOrganization string
@@ -42,6 +47,12 @@ var ipEnrichLatency = prometheus.NewSummary(
 
 // load env variable and  maxmind db
 func init() {
+	argsWithProg := os.Args
+	if len(argsWithProg) > 2 {
+		log.Fatalln(usage)
+	} else if len(argsWithProg) == 2 {
+		sleep = true
+	}
 
 	prometheus.MustRegister(ipEnrichCounter, ipEnrichLatency)
 	// Get maxminddb path value from env
@@ -78,8 +89,7 @@ func init() {
 
 func enricher(w http.ResponseWriter, r *http.Request) {
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
-		us := v * 1000000 // make microseconds
-		ipEnrichLatency.Observe(us)
+		ipEnrichLatency.Observe(v)
 	}))
 	defer timer.ObserveDuration()
 	// set Content type json
@@ -96,6 +106,13 @@ func enricher(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(`{"error": "ip address is not valid"}`))
 		return
+	}
+	///rand sleep for test alert system
+	if sleep {
+		rand.Seed(time.Now().UnixNano())
+		n := rand.Intn(1000) // n will be between 0 and 1000
+		fmt.Printf("Sleeping %d milliseconds...\n", n)
+		time.Sleep(time.Duration(n) * time.Millisecond)
 	}
 
 	// lookup ip param to maxmind db

@@ -35,8 +35,8 @@ curl -H "Host: chart-example.local" http://127.0.0.1/?ip=8.8.8.8 # Test applicat
 - [ ] Create production pipeline using tekton and argocd 
 - [ ] Install argo workflow and istio for canary deployment and Circuit Breaking
 - [x] Implement prometheus service monitor
-- [ ] Deploy alertmanager and grafana oncall for alert management system
-- [ ] Implement prometheus rule for alert and integrate alertmanager to oncall system
+- [x] Deploy alertmanager and grafana for alert management system
+- [x] Implement prometheus rule for alert and integrate alertmanager to oncall system
 - [x] Implement Network policy
 - 
 ```
@@ -67,3 +67,4 @@ perform-test                   Performance test, expected requests per second bi
 test-app                       Test deployed app
 test-cst                       Test container structure
 ```
+![prometheus rule and grafana alert](image/alert.png)

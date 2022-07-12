@@ -67,6 +67,7 @@ deploy-app: kubectx ## Deploy application to kind kubernetes
 	--set image.repository=$(REGISTRY)/$(PROJECT) \
 	--set serviceMonitor.enabled=true \
 	--set ingress.enabled=true \
+	--set prometheusRule.enabled=true \
 	--set image.pullPolicy=Always
 deploy-cluster:  ## Deploy kind cluster with local registry
 	sh -c cluster/cluster-local-registry.sh
@@ -126,7 +127,7 @@ delete-prometheus: kubectx ## Delete prometheus operator
 
 
 perform-test: ## Performance test, expected requests per second bigger than 10000
-	docker run --add-host=chart-example.local:172.17.0.1 --rm jordi/ab -c 100 -n 10000 http://chart-example.local/?ip=1.1.1.1 
+	docker run --add-host=chart-example.local:172.17.0.1 --rm jordi/ab -c 100 -n 100000 http://chart-example.local/?ip=1.1.1.1 
 	curl chart-example.local:80/metrics
 test-app: kubectx ## Test deployed app
 	helm test -n $(PROJECT)-$(BRANCH) $(PROJECT)

@@ -91,7 +91,7 @@ affinity: {}
 serviceMonitor:
   enabled: false
 
-NetworkPolicy:
+networkPolicy:
   enabled: false
   egressRules: []
   ingressRules: 
@@ -105,3 +105,33 @@ NetworkPolicy:
       ports:
         - protocol: TCP
           port: 8000
+
+prometheusRule:
+  ## @param prometheusRule.enabled Create a PrometheusRule for Prometheus Operator
+  ##
+  enabled: false
+  rules:
+    - alert: IpenrichLatencyHighP50
+      expr: ipenrich_request_durations{quantile="0.5"}  > 0.5 
+      for: 15m
+      labels:
+        severity: warning
+      annotations:
+        summary: Ipenrich latency high 
+        description: "Ipenrich p50 latency is higher than 0.5 seconds"
+    - alert: IpenrichLatencyHighP90
+      expr: ipenrich_request_durations{quantile="0.9"}  > 1 
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        summary: Ipenrich latency high 
+        description: "Ipenrich p90 latency is higher than 1 seconds"
+    - alert: IpenrichLatencyHighP99
+      expr: ipenrich_request_durations{quantile="0.99"}  > 3 
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: Ipenrich latency high 
+        description: "Ipenrich p99 latency is higher than 3 seconds"
