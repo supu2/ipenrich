@@ -63,7 +63,7 @@ run-pipeline: kubectx ## Run tekton pipeline
 	tkn pipelinerun logs $(PIPELINE_RUN_NAME) -n $(NAMESPACE) --follow
 	echo "--- Check if Tekton PipelineRun Failed & exit GitLab Pipeline accordingly"
 	tkn pipelinerun describe -n $(NAMESPACE) $(PIPELINE_RUN_NAME)
-	$(eval result=$(shell kubectl get pipelineruns -n $(NAMESPACE) $(PIPELINE_RUN_NAME) --output=jsonpath='{.status.conditions[*].reason}')
+	$(eval result=$(shell kubectl get pipelineruns -n $(NAMESPACE) $(PIPELINE_RUN_NAME) --output=jsonpath='{.status.conditions[*].reason}'))
 	kubectl delete pipelineruns -n $(NAMESPACE) $(cat PIPELINE_RUN_NAME) 
 	echo $(result)| grep Failed && exit 1 || exit 0
 

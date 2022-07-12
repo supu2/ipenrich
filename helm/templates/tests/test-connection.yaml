@@ -7,9 +7,26 @@ metadata:
   annotations:
     "helm.sh/hook": test
 spec:
+  securityContext:
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 1000
   containers:
     - name: wget
-      image: busybox
+      image: busybox:stable
       command: ['wget']
       args: ['{{ include "helm.fullname" . }}:{{ .Values.service.port }}']
+      securityContext:
+        fsGroup: 2000
+        readOnlyRootFilesystem: true
+      resources:
+        limits:
+          cpu: 200m
+          memory: 256Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
   restartPolicy: Never
