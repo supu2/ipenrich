@@ -37,7 +37,7 @@ spec:
       resources: {}
       script: |
         #!/usr/bin/env sh
-          cmd="trivy $* $(params.IMAGE_PATH)"
+          cmd="trivy --cache-dir /workspace/.cache $* $(params.IMAGE_PATH)"
           echo "Running trivy task with command below"
           echo "$cmd"
           eval "$cmd"

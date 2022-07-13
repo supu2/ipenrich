@@ -112,7 +112,7 @@ spec:
       workspaces:
         - name: source
           workspace: shared-workspace
-    - name: kaniko-run
+    - name: build-image
       params:
         - name: IMAGE
           value: '$(params.IMAGE):$(params.CI_COMMIT_BRANCH)'
@@ -134,6 +134,7 @@ spec:
       params:
         - name: ARGS
           value:
+            - "image"
             - "--exit-code"
             - "1"
             - "--severity"
@@ -141,10 +142,10 @@ spec:
         - name: IMAGE_PATH
           value: '$(params.IMAGE):$(params.CI_COMMIT_BRANCH)'
       runAfter:
-        - kaniko-run
+        - build-image
       taskRef:
         kind: ClusterTask
-        name: trivy-scanner-container
+        name: trivy-scanner
       workspaces:
         - name: manifest-dir
           workspace: shared-workspace

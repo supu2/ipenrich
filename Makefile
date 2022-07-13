@@ -40,13 +40,13 @@ push-container: test-cst ## Push container to local registry
 run-container: ## Run container for the test
 	docker run -i -t -p 8000:8000 --rm --name="$(PROJECT)" $(PROJECT):$(BRANCH)
 run-pipeline: kubectx ## Run tekton pipeline
-	echo "--- Create Tekton Pipeline" 
+	@echo "--- Create Tekton Pipeline" 
 	kubectl apply -n $(NAMESPACE) -f pipeline/pipeline.yaml
-	echo "--- Create parameterized Tekton PipelineRun yaml" 
+	@echo "--- Create parameterized Tekton PipelineRun yaml" 
 	tkn  p list -n $(NAMESPACE)
 	tkn pipeline start pipeline -n $(NAMESPACE) \
 	--workspace name=shared-workspace,subPath=$(PROJECT),claimName=shared-workspace-pvc  \
-	--param IMAGE=$(REGISTRY)/$(PROJECT):$(BRANCH) \
+	--param IMAGE=$(REGISTRY)/$(PROJECT) \
 	--param CI_COMMIT_BRANCH=$(BRANCH) \
 	--param CI_PROJECT_NAME=$(PROJECT) \
 	--param CI_PROJECT_URL=$(PROJECT_URL) \
@@ -57,15 +57,16 @@ run-pipeline: kubectx ## Run tekton pipeline
 	--param TRIVY_IMAGE_PATH="." \
 	--dry-run \
 	--output yaml > pipelinerun.yml
-	echo "--- Trigger PipelineRun in Tekton / K8s"
-	$(eval PIPELINE_RUN_NAME=$(shell kubectl create -f pipelinerun.yml -n $(NAMESPACE) --output=jsonpath='{.metadata.name}' | tee PIPELINE_RUN_NAME))
-	echo "--- Show Tekton PipelineRun logs" && rm pipelinerun.yml
+	@echo "--- Trigger PipelineRun in Tekton / K8s" && sleep 5
+	$(eval PIPELINE_RUN_NAME = $(shell kubectl create -f pipelinerun.yml -n $(NAMESPACE) --output=jsonpath='{.metadata.name}' ))
+	@echo "--- Show Tekton PipelineRun logs"  && echo $(PIPELINE_RUN_NAME)
 	tkn pipelinerun logs $(PIPELINE_RUN_NAME) -n $(NAMESPACE) --follow
-	echo "--- Check if Tekton PipelineRun Failed & exit GitLab Pipeline accordingly"
+	@echo "--- Check if Tekton PipelineRun Failed & exit GitLab Pipeline accordingly"
 	tkn pipelinerun describe -n $(NAMESPACE) $(PIPELINE_RUN_NAME)
-	$(eval result=$(shell kubectl get pipelineruns -n $(NAMESPACE) $(PIPELINE_RUN_NAME) --output=jsonpath='{.status.conditions[*].reason}'))
-	kubectl delete pipelineruns -n $(NAMESPACE) $(cat PIPELINE_RUN_NAME) 
-	echo $(result)| grep Failed && exit 1 || exit 0
+	$(eval result = $(shell kubectl get pipelineruns -n $(NAMESPACE) $(PIPELINE_RUN_NAME) --output=jsonpath='{.status.conditions[*].reason}'))
+	@echo $(result)| grep Failed && exit 1 || exit 0
+	kubectl delete pipelineruns -n $(NAMESPACE) $(PIPELINE_RUN_NAME) 
+
 
 
 stop-container: ## Stop and remove a running container

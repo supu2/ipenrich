@@ -31,7 +31,7 @@ spec:
       name: EXTRA_ARGS
       type: array
     - default: >-
-        gcr.io/kaniko-project/executor:v1.5.1@sha256:c6166717f7fe0b7da44908c986137ecfeab21f31ec3992f6e128fff8a94be8a5
+        gcr.io/kaniko-project/executor:v1.8.1
       description: The image on which builds will run (default is v1.5.1)
       name: BUILDER_IMAGE
       type: string
@@ -47,6 +47,7 @@ spec:
         - '--context=$(workspaces.source.path)/$(params.CONTEXT)'
         - '--destination=$(params.IMAGE)'
         - '--digest-file=$(results.IMAGE_DIGEST.path)'
+        - '--ignore-path=/product_uuid'
       image: $(params.BUILDER_IMAGE)
       name: build-and-push
       resources: {}
