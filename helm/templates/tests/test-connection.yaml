@@ -7,21 +7,13 @@ metadata:
   annotations:
     "helm.sh/hook": test
 spec:
-  securityContext:
-    capabilities:
-      drop:
-      - ALL
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    runAsUser: 1000
   containers:
     - name: wget
-      image: busybox:stable
+      image: joeshaw/busybox-nonroot
       command: ['wget']
-      args: ['{{ include "helm.fullname" . }}:{{ .Values.service.port }}']
       securityContext:
-        fsGroup: 2000
-        readOnlyRootFilesystem: true
+        {{- toYaml .Values.securityContext | nindent 8 }}
+      args: ['{{ include "helm.fullname" . }}:{{ .Values.service.port }}']
       resources:
         limits:
           cpu: 200m

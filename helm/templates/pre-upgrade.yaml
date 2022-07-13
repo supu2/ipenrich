@@ -14,7 +14,6 @@ metadata:
     "helm.sh/hook-weight": "-1"
     "helm.sh/hook-delete-policy": hook-succeeded
 spec:
-
   template:
     metadata:
       name: "{{ .Release.Name }}"
@@ -23,21 +22,13 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name | quote }}
         helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     spec:
-      securityContext:
-        capabilities:
-          drop:
-          - ALL
-        readOnlyRootFilesystem: true
-        runAsNonRoot: true
-        runAsUser: 1000
       restartPolicy: Never
       containers:
       - name: preupgradejob
-        image: "alpine:3.5"
-        command: ["/bin/echo","You can run migration script"]
+        image: "joeshaw/busybox-nonroot"
         securityContext:
-          fsGroup: 2000
-          readOnlyRootFilesystem: true
+          {{- toYaml .Values.securityContext | nindent 10 }}
+        command: ["/bin/echo","You can run migration script"]
         resources:
           limits:
             cpu: 200m
@@ -45,3 +36,4 @@ spec:
           requests:
             cpu: 100m
             memory: 128Mi
+

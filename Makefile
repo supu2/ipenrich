@@ -99,10 +99,15 @@ deploy-app: kubectx ## Deploy application to kind kubernetes
 	helm upgrade --install -n $(NAMESPACE) --create-namespace -f helm/values.yaml $(PROJECT) ./helm \
 	--set image.tag=$(BRANCH) \
 	--set image.repository=$(REGISTRY)/$(PROJECT) \
+	--set image.pullPolicy=Always \
 	--set serviceMonitor.enabled=true \
 	--set ingress.enabled=true \
-	--set prometheusRule.enabled=true \
-	--set image.pullPolicy=Always
+	--set prometheusRule.enabled=true
+
+deploy-argo: kubectx ## Deploy argo 
+	kubectl create namespace argo-rollouts
+	kubectl apply -n argo-rollouts -f https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml
+
 deploy-cluster:  ## Deploy kind cluster with local registry
 	sh -c cluster/cluster-local-registry.sh
 deploy-loki: kubectx  ## Deploy loki stack with grafana
@@ -146,10 +151,12 @@ deploy-prometheus: kubectx ## Deploy prometheus operator
 	--set kubeProxy.enabled=false \
 	--set nodeExporter.enabled=false 
 
-
-
 delete-app: kubectx ## Delete application from kind kubernetes 
 	helm uninstall -n $(NAMESPACE) $(PROJECT)
+
+delete-argo: kubectx ## Delete argo
+	kubectl delete -n argo-rollouts -f https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml
+	kubectl delete namespace argo-rollouts
 delete-cluster:  kubectx ## Destroy kind cluter
 	kind delete  cluster   
 delete-loki: kubectx ## Delete loki stack

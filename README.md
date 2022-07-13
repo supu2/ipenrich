@@ -34,8 +34,8 @@ curl -H "Host: chart-example.local" http://127.0.0.1/?ip=8.8.8.8 # Test applicat
 - [x] Implement response latency prometheus metric
 - [x] Deploy and remove tekton
 - [x] Create CI pipeline using tekton
-- [ ] Create CD pipeline using argocd
-- [ ] Install argo workflow and istio for canary deployment and Circuit Breaking
+- [ ] Create CD pipeline using argo rollout
+- [x] Install argo rollout for canary deployment 
 - [x] Implement prometheus service monitor
 - [x] Deploy alertmanager and grafana for alert management system
 - [x] Implement prometheus rule for alert and integrate alertmanager to oncall system
@@ -70,3 +70,47 @@ test-app                       Test deployed app
 test-cst                       Test container structure
 ```
 ![prometheus rule and grafana alert](image/alert.png)
+
+# Tekton CI Report
+tkn pipelinerun describe -n ipenrich-main pipeline-run-jm2h7
+Name:              pipeline-run-jm2h7
+Namespace:         ipenrich-main
+Pipeline Ref:      pipeline
+Service Account:   default
+Timeout:           1h0m0s
+Labels:
+ tekton.dev/pipeline=pipeline
+
+🌡️  Status
+
+STARTED          DURATION   STATUS
+11 minutes ago   11m21s     Succeeded
+
+⚓ Params
+
+ NAME                 VALUE
+ ∙ CI_COMMIT_BRANCH   main
+ ∙ CI_PROJECT_NAME    ipenrich
+ ∙ CI_PROJECT_PATH    ipenrich-main
+ ∙ CI_PROJECT_URL     https://github.com/supu2/ipenrich
+ ∙ DOCKERCONTEXT      .
+ ∙ DOCKERFILE         Dockerfile
+ ∙ HELMFOLDER         helm
+ ∙ IMAGE              172.17.0.1:5001/ipenrich
+ ∙ TRIVY_IMAGE_PATH   .
+
+📂 Workspaces
+
+ NAME                 SUB PATH   WORKSPACE BINDING
+ ∙ shared-workspace   ipenrich   PersistentVolumeClaim (claimName=shared-workspace-pvc)
+
+🗂  Taskruns
+
+ NAME                                           TASK NAME                 STARTED          DURATION   STATUS
+ ∙ pipeline-run-jm2h7-trivy-scanner-container   trivy-scanner-container   2 minutes ago    2m53s      Succeeded
+ ∙ pipeline-run-jm2h7-build-image               build-image               6 minutes ago    3m21s      Succeeded
+ ∙ pipeline-run-jm2h7-kube-linter               kube-linter               8 minutes ago    17s        Succeeded
+ ∙ pipeline-run-jm2h7-trivy-scanner             trivy-scanner             8 minutes ago    49s        Succeeded
+ ∙ pipeline-run-jm2h7-container-best-practise   container-best-practise   8 minutes ago    15s        Succeeded
+ ∙ pipeline-run-jm2h7-secret-detection          secret-detection          8 minutes ago    2m11s      Succeeded
+ ∙ pipeline-run-jm2h7-fetch-repository          fetch-repository          11 minutes ago   2m56s      Succeeded
