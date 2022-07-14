@@ -28,7 +28,7 @@ podAnnotations: {}
 podSecurityContext: {}
   # fsGroup: 2000
 
-securityContext: 
+securityContext:
   # capabilities:
   #   drop:
   #   - ALL
@@ -63,7 +63,7 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
-resources: 
+resources:
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
@@ -100,14 +100,14 @@ serviceMonitor:
 networkPolicy:
   enabled: false
   egressRules: []
-  ingressRules: 
+  ingressRules:
     - selectors:
         - namespaceSelector:
             matchLabels:
               "kubernetes.io/metadata.name": "ingress-nginx"
         - namespaceSelector:
             matchLabels:
-              "kubernetes.io/metadata.name": "monitoring"        
+              "kubernetes.io/metadata.name": "monitoring"
       ports:
         - protocol: TCP
           port: 8000
@@ -118,26 +118,26 @@ prometheusRule:
   enabled: false
   rules:
     - alert: IpenrichLatencyHighP50
-      expr: ipenrich_request_durations{quantile="0.5"}  > 0.5 
+      expr: ipenrich_request_durations{quantile="0.5"}  > 0.5
       for: 15m
       labels:
         severity: warning
       annotations:
-        summary: Ipenrich latency high 
+        summary: Ipenrich latency high
         description: "Ipenrich p50 latency is higher than 0.5 seconds"
     - alert: IpenrichLatencyHighP90
-      expr: ipenrich_request_durations{quantile="0.9"}  > 1 
+      expr: ipenrich_request_durations{quantile="0.9"}  > 1
       for: 10m
       labels:
         severity: warning
       annotations:
-        summary: Ipenrich latency high 
+        summary: Ipenrich latency high
         description: "Ipenrich p90 latency is higher than 1 seconds"
     - alert: IpenrichLatencyHighP99
-      expr: ipenrich_request_durations{quantile="0.99"}  > 3 
+      expr: ipenrich_request_durations{quantile="0.99"}  > 3
       for: 5m
       labels:
         severity: warning
       annotations:
-        summary: Ipenrich latency high 
+        summary: Ipenrich latency high
         description: "Ipenrich p99 latency is higher than 3 seconds"

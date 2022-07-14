@@ -28,7 +28,7 @@ spec:
     - to:
 {{ toYaml $rule.selectors | indent 9 }}
       ports:
-{{ toYaml $rule.ports | indent 9 }}  
+{{ toYaml $rule.ports | indent 9 }}
 {{- end }}
 {{- end }}
 {{- if .Values.NetworkPolicy.ingressRules }}
@@ -37,7 +37,7 @@ spec:
     - from:
 {{ toYaml $rule.selectors | indent 7 }}
       ports:
-{{ toYaml $rule.ports | indent 9 }}  
+{{ toYaml $rule.ports | indent 9 }}
 {{- end }}
 {{- end }}
 {{- end }}

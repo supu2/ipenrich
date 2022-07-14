@@ -16,9 +16,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-var ok bool
 var asn, city, port string
-var err error
 var asndb, citydb *geoip2.Reader
 var usage = "ipenrich [args] \n -s \t random sleep"
 var sleep = false
@@ -66,7 +64,7 @@ func init() {
 	}
 
 	// Get port value from env
-	port, ok = os.LookupEnv("PORT")
+	port, ok := os.LookupEnv("PORT")
 
 	if !ok {
 		port = ":8000"
@@ -74,16 +72,20 @@ func init() {
 		port = ":" + port
 	}
 	// load maxmind asndb
-	asndb, err = geoip2.Open(asn)
+	asndb, err := geoip2.Open(asn)
 	if err != nil {
 		log.Fatal(err)
-		defer asndb.Close()
+		defer func() {
+			_ = asndb.Close()
+		}()
 	}
 	// load maxmind citydb
-	citydb, err = geoip2.Open(city)
+	citydb, err := geoip2.Open(city)
 	if err != nil {
 		log.Fatal(err)
-		defer citydb.Close()
+		defer func() {
+			_ = citydb.Close()
+		}()
 	}
 }
 
@@ -98,13 +100,19 @@ func enricher(w http.ResponseWriter, r *http.Request) {
 	// get ip params from url
 	parm := r.URL.Query().Get("ip")
 	if parm == "" {
-		w.Write([]byte(`{"usage": "/?ip=8.8.8.8"}`))
+		_, err := w.Write([]byte(`{"usage": "/?ip=8.8.8.8"}`))
+		if err != nil {
+			fmt.Println(err)
+		}
 		return
 	}
 	ip := net.ParseIP(parm)
 	if ip == nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"error": "ip address is not valid"}`))
+		_, err := w.Write([]byte(`{"error": "ip address is not valid"}`))
+		if err != nil {
+			fmt.Println(err)
+		}
 		return
 	}
 	///rand sleep for test alert system
@@ -117,6 +125,9 @@ func enricher(w http.ResponseWriter, r *http.Request) {
 
 	// lookup ip param to maxmind db
 	asn_r, err := asndb.ASN(ip)
+	if err != nil {
+		log.Fatal(err)
+	}
 	city_r, err := citydb.City(ip)
 	result := enrich{
 		City:                         city_r.City.Names["en"],
@@ -131,7 +142,10 @@ func enricher(w http.ResponseWriter, r *http.Request) {
 	}
 	ipEnrichCounter.Inc()
 	response, _ := json.Marshal(result)
-	w.Write(response)
+	_, err = w.Write(response)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 }
 

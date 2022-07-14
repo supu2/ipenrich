@@ -1,4 +1,4 @@
-# ip enrich 
+# ip enrich
 This applicaton provide ip address to asn(autonomous system number) lookup based maxmind asn database
 
 # Prerequisites
@@ -13,7 +13,7 @@ make
 make install-kubectl    # Install kubectl
 make install-helm       # Install helm
 make install-kind       # kind minimal kubernetes for local development
-make install-cst        # Install container structure test 
+make install-cst        # Install container structure test
 ```
 The bellow step allow to deploy application on kind kubernetes cluster that is lightweight kubernetes distrubition.
 ```
@@ -23,7 +23,7 @@ make deploy-opa         # Deploy open policy agent
 make build-container    # Build the container
 make push-container     # Push container to local registry and test cst
 make deploy-prometheus  # Deploy prometheus operator and prometheus
-make deploy-app         # Deploy application to kind kubernetes 
+make deploy-app         # Deploy application to kind kubernetes
 make perform-test       # Performance test, expected requests per second bigger than 10000
 curl -H "Host: chart-example.local" http://127.0.0.1/?ip=8.8.8.8 # Test application
 ```
@@ -35,12 +35,12 @@ curl -H "Host: chart-example.local" http://127.0.0.1/?ip=8.8.8.8 # Test applicat
 - [x] Deploy and remove tekton
 - [x] Create CI pipeline using tekton
 - [ ] Create CD pipeline using argo rollout
-- [x] Install argo rollout for canary deployment 
+- [x] Install argo rollout for canary deployment
 - [x] Implement prometheus service monitor
 - [x] Deploy alertmanager and grafana for alert management system
 - [x] Implement prometheus rule for alert and integrate alertmanager to oncall system
 - [x] Implement Network policy
-- 
+-
 ```
 Below make functions
 help                           This help.
@@ -49,29 +49,29 @@ push-container                 Push container to local registry
 run-container                  Run container for the test
 run-pipeline                   Run tekton pipeline
 stop-container                 Stop and remove a running container
-clean                          Clean container 
+clean                          Clean container
 install-kind                   kind minimal kubernetes for local development
-install-kubectl                Install kubectl 
+install-kubectl                Install kubectl
 install-helm                   Install helm
 install-tkn                    Install tkn cli
-install-cst                    Install container structure test 
-deploy-app                     Deploy application to kind kubernetes 
-deploy-argo                    Deploy argo 
+install-cst                    Install container structure test
+deploy-app                     Deploy application to kind kubernetes
+deploy-argo                    Deploy argo
 deploy-cluster                 Deploy kind cluster with local registry
 deploy-loki                    Deploy loki stack with grafana
 deploy-ingress                 Deploy nginx ingress controller
-deploy-tekton                  Deploy tekton 
+deploy-tekton                  Deploy tekton
 deploy-tekton-tasks            Deploy tekton ci tasks
-deploy-metricserver            Deploy metric server for enable HPA. 
+deploy-metricserver            Deploy metric server for enable HPA.
 deploy-opa                     Deploy open policy agent
 deploy-prometheus              Deploy prometheus operator
-delete-app                     Delete application from kind kubernetes 
+delete-app                     Delete application from kind kubernetes
 delete-argo                    Delete argo
 delete-cluster                 Destroy kind cluter
 delete-loki                    Delete loki stack
 delete-ingress                 Delete nginx ingress controller
-delete-tekton                  Deploy tekton 
-delete-metricserver            Delete metric server 
+delete-tekton                  Deploy tekton
+delete-metricserver            Delete metric server
 delete-opa                     Deploy open policy agent
 delete-prometheus              Delete prometheus operator
 perform-test                   Performance test, expected requests per second bigger than 10000
