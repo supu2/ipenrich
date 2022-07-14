@@ -18,7 +18,7 @@ endif
 help: ## This help.
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo "Please add domain record in hosts file"
-	@echo 'sudo echo "172.17.0.1 grafana.chart-example.local \n 172.17.0.1 chart-example.local" >> /etc/hosts' 
+	@echo 'sudo echo "172.17.0.1 chart-example.local grafana.chart-example.local \n 172.17.0.1 chart-example.local" >> /etc/hosts' 
 
 .DEFAULT_GOAL := help
 

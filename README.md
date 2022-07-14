@@ -47,27 +47,38 @@ help                           This help.
 build-container                Build the container
 push-container                 Push container to local registry
 run-container                  Run container for the test
+run-pipeline                   Run tekton pipeline
 stop-container                 Stop and remove a running container
 clean                          Clean container 
 install-kind                   kind minimal kubernetes for local development
 install-kubectl                Install kubectl 
 install-helm                   Install helm
+install-tkn                    Install tkn cli
 install-cst                    Install container structure test 
 deploy-app                     Deploy application to kind kubernetes 
+deploy-argo                    Deploy argo 
 deploy-cluster                 Deploy kind cluster with local registry
+deploy-loki                    Deploy loki stack with grafana
 deploy-ingress                 Deploy nginx ingress controller
+deploy-tekton                  Deploy tekton 
+deploy-tekton-tasks            Deploy tekton ci tasks
 deploy-metricserver            Deploy metric server for enable HPA. 
 deploy-opa                     Deploy open policy agent
 deploy-prometheus              Deploy prometheus operator
 delete-app                     Delete application from kind kubernetes 
+delete-argo                    Delete argo
 delete-cluster                 Destroy kind cluter
+delete-loki                    Delete loki stack
 delete-ingress                 Delete nginx ingress controller
+delete-tekton                  Deploy tekton 
 delete-metricserver            Delete metric server 
 delete-opa                     Deploy open policy agent
 delete-prometheus              Delete prometheus operator
 perform-test                   Performance test, expected requests per second bigger than 10000
 test-app                       Test deployed app
 test-cst                       Test container structure
+Please add domain record in hosts file
+sudo echo "172.17.0.1 chart-example.local grafana.chart-example.local \n 172.17.0.1 chart-example.local" >> /etc/hosts
 ```
 ![prometheus rule and grafana alert](image/alert.png)
 
