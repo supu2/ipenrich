@@ -81,7 +81,7 @@ Please add domain record in hosts file
 sudo echo "172.17.0.1 chart-example.local grafana.chart-example.local \n 172.17.0.1 chart-example.local" >> /etc/hosts
 ```
 ![prometheus rule and grafana alert](image/alert.png)
-
+```
 # Tekton CI Report
 tkn pipelinerun describe -n ipenrich-main pipeline-run-jm2h7
 Name:              pipeline-run-jm2h7
@@ -125,3 +125,4 @@ STARTED          DURATION   STATUS
  ∙ pipeline-run-jm2h7-container-best-practise   container-best-practise   8 minutes ago    15s        Succeeded
  ∙ pipeline-run-jm2h7-secret-detection          secret-detection          8 minutes ago    2m11s      Succeeded
  ∙ pipeline-run-jm2h7-fetch-repository          fetch-repository          11 minutes ago   2m56s      Succeeded
+```
